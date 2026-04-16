@@ -1,6 +1,9 @@
 #ifndef BUFFER_POOL
 #define BUFFER_POOL
 
+#include <semaphore.h> 
+#include <stdbool.h>   
+#include "bank.h"
 #define BUFFER_POOL_SIZE 5
 
 typedef struct {
