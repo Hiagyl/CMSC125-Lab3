@@ -35,4 +35,6 @@ typedef struct {
     TxStatus status;
 } Transaction;
 
+void* execute_transaction(void* arg);
+
 #endif
