@@ -7,7 +7,7 @@ bool simulation_running = true;
 pthread_mutex_t tick_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t tick_changed = PTHREAD_COND_INITIALIZER;
 
-void* timer_thread(void* arg) {
+void* timer_thread() {
     while (simulation_running) {
         // Sleep to simulate time passing
         usleep(TICK_INTERVAL_MS * 1000); 
