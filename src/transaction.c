@@ -1,7 +1,7 @@
 #include "transaction.h"
 #include "bank.h"
 #include "timer.h"
-#include "lock_mgr.h"
+// #include "lock_mgr.h"
 #include <stdio.h>
 
 void* execute_transaction(void* arg) {

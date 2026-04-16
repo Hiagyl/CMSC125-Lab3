@@ -2,6 +2,7 @@
 #include "bank.h"
 #include <pthread.h>
 
+extern Bank bank;
 
 void init_buffer_pool(BufferPool* pool) {
     sem_init(&pool->empty_slots, 0, BUFFER_POOL_SIZE);
