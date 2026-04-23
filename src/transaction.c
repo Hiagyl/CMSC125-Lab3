@@ -1,7 +1,7 @@
 #include "transaction.h"
 #include "bank.h"
 #include "timer.h"
-// #include "lock_mgr.h"
+#include "lock_mgr.h"
 #include <stdio.h>
 
 void* execute_transaction(void* arg) {
@@ -19,22 +19,32 @@ void* execute_transaction(void* arg) {
         switch (op->type) {
             case OP_DEPOSIT:
                 deposit(op->account_id, op->amount_centavos);
+                printf("T%d: Deposited PHP %d.%02d into Account %d\n", 
+                        tx->tx_id, op->amount_centavos/100, op->amount_centavos%100, op->account_id);
                 break;
 
             case OP_WITHDRAW:
                 if (!withdraw(op->account_id, op->amount_centavos)) {
+                    printf("T%d: Withdrawal of PHP %d.%02d from Account %d FAILED (Insufficient Funds)\n", 
+                            tx->tx_id, op->amount_centavos/100, op->amount_centavos%100, op->account_id);
                     // Insufficient funds triggers an immediate abort
                     tx->status = TX_ABORTED;
                     return NULL;
                 }
+                printf("T%d: Withdrew PHP %d.%02d from Account %d\n", 
+                        tx->tx_id, op->amount_centavos/100, op->amount_centavos%100, op->account_id);
                 break;
 
             case OP_TRANSFER:
                 // Calls the deadlock-safe transfer in lock_mgr.c
                 if (!transfer(op->account_id, op->target_account, op->amount_centavos)) {
+                    printf("T%d: Transfer of PHP %d.%02d from %d to %d FAILED\n", 
+                            tx->tx_id, op->amount_centavos/100, op->amount_centavos%100, op->account_id, op->target_account);
                     tx->status = TX_ABORTED;
                     return NULL;
                 }
+                printf("T%d: Transferred PHP %d.%02d from Account %d to %d\n", 
+                        tx->tx_id, op->amount_centavos/100, op->amount_centavos%100, op->account_id, op->target_account);
                 break;
 
             case OP_BALANCE: {

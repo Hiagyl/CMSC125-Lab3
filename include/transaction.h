@@ -36,5 +36,6 @@ typedef struct {
 } Transaction;
 
 void* execute_transaction(void* arg);
+int parse_trace(const char* filename, Transaction* workload);
 
 #endif
