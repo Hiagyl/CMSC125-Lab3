@@ -5,6 +5,6 @@
 
 // Strategy A: Deadlock Prevention via Lock Ordering
 // Acquires locks in ascending order of account ID to break circular wait
-bool transfer(int from_id, int to_id, int amount_centavos);
+bool transfer(int tx_id, int from_id, int to_id, int amount_centavos);
 
 #endif

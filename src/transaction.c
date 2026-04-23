@@ -4,6 +4,16 @@
 #include "lock_mgr.h"
 #include <stdio.h>
 
+const char* op_to_str(OpType type) {
+    switch(type) {
+        case OP_DEPOSIT: return "DEPOSIT";
+        case OP_WITHDRAW: return "WITHDRAW";
+        case OP_TRANSFER: return "TRANSFER";
+        case OP_BALANCE: return "BALANCE";
+        default: return "UNKNOWN";
+    }
+}
+
 void* execute_transaction(void* arg) {
     Transaction* tx = (Transaction*)arg;
 
@@ -14,37 +24,42 @@ void* execute_transaction(void* arg) {
 
     for (int i = 0; i < tx->num_ops; i++) {
         Operation* op = &tx->ops[i];
+
+        // Log Start
+        if (op->type == OP_TRANSFER) {
+            printf("  T%d started: TRANSFER from %d to %d amount PHP %d.%02d\n", 
+                   tx->tx_id, op->account_id, op->target_account, op->amount_centavos/100, op->amount_centavos%100);
+        } else {
+            printf("  T%d started: %s account %d amount PHP %d.%02d\n", 
+                   tx->tx_id, op_to_str(op->type), op->account_id, op->amount_centavos/100, op->amount_centavos%100);
+        }
+
         int tick_before = global_tick;
 
         switch (op->type) {
             case OP_DEPOSIT:
                 deposit(op->account_id, op->amount_centavos);
-                printf("T%d: Deposited PHP %d.%02d into Account %d\n", 
-                        tx->tx_id, op->amount_centavos/100, op->amount_centavos%100, op->account_id);
+                printf("  T%d completed: DEPOSIT successful\n", tx->tx_id);
                 break;
 
             case OP_WITHDRAW:
-                if (!withdraw(op->account_id, op->amount_centavos)) {
-                    printf("T%d: Withdrawal of PHP %d.%02d from Account %d FAILED (Insufficient Funds)\n", 
-                            tx->tx_id, op->amount_centavos/100, op->amount_centavos%100, op->account_id);
-                    // Insufficient funds triggers an immediate abort
+                if (withdraw(op->account_id, op->amount_centavos)) {
+                    printf("  T%d completed: WITHDRAW successful\n", tx->tx_id);
+                } else {
+                    printf("  T%d: WITHDRAW failed (Insufficient Funds)\n", tx->tx_id);
                     tx->status = TX_ABORTED;
                     return NULL;
                 }
-                printf("T%d: Withdrew PHP %d.%02d from Account %d\n", 
-                        tx->tx_id, op->amount_centavos/100, op->amount_centavos%100, op->account_id);
                 break;
 
             case OP_TRANSFER:
                 // Calls the deadlock-safe transfer in lock_mgr.c
-                if (!transfer(op->account_id, op->target_account, op->amount_centavos)) {
-                    printf("T%d: Transfer of PHP %d.%02d from %d to %d FAILED\n", 
-                            tx->tx_id, op->amount_centavos/100, op->amount_centavos%100, op->account_id, op->target_account);
+                if (transfer(tx->tx_id, op->account_id, op->target_account, op->amount_centavos)) {
+                    printf("  T%d completed: TRANSFER successful\n", tx->tx_id);
+                } else {
                     tx->status = TX_ABORTED;
                     return NULL;
                 }
-                printf("T%d: Transferred PHP %d.%02d from Account %d to %d\n", 
-                        tx->tx_id, op->amount_centavos/100, op->amount_centavos%100, op->account_id, op->target_account);
                 break;
 
             case OP_BALANCE: {

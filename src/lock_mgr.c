@@ -1,10 +1,10 @@
 #include "lock_mgr.h"
 #include "bank.h"
-#include <pthread.h>
+#include <stdio.h>
 
 extern Bank bank;
 
-bool transfer(int from_id, int to_id, int amount_centavos) {
+bool transfer(int tx_id, int from_id, int to_id, int amount_centavos) {
     // 1. Prevent self-transfers (or handle as no-op)
     if (from_id == to_id) return true;
 
@@ -13,27 +13,27 @@ bool transfer(int from_id, int to_id, int amount_centavos) {
     int first = (from_id < to_id) ? from_id : to_id;
     int second = (from_id < to_id) ? to_id : from_id;
 
-    Account* acc_first = &bank.accounts[first];
-    Account* acc_second = &bank.accounts[second];
+    // Log acquisition of the first lock
+    printf("  T%d acquired lock on account %d\n", tx_id, first);
+    pthread_rwlock_wrlock(&bank.accounts[first].lock);
 
-    // Acquire exclusive writer locks
-    pthread_rwlock_wrlock(&acc_first->lock);
-    pthread_rwlock_wrlock(&acc_second->lock);
+    // Log the prevention/waiting for the second lock
+    printf("  [DEADLOCK PREVENTED] Lock ordering: T%d waiting for account %d\n", tx_id, second);
+    pthread_rwlock_wrlock(&bank.accounts[second].lock);
+    printf("  T%d acquired lock on account %d\n", tx_id, second);
 
     // 3. Perform the Transaction Logic
-    Account* from_acc = &bank.accounts[from_id];
-    Account* to_acc = &bank.accounts[to_id];
-
     bool success = false;
-    if (from_acc->balance_centavos >= amount_centavos) {
-        from_acc->balance_centavos -= amount_centavos;
-        to_acc->balance_centavos += amount_centavos;
+    if (bank.accounts[from_id].balance_centavos >= amount_centavos) {
+        bank.accounts[from_id].balance_centavos -= amount_centavos;
+        bank.accounts[to_id].balance_centavos += amount_centavos;
         success = true;
+    } else {
+        printf("  T%d: TRANSFER failed (Insufficient Funds)\n", tx_id);
     }
 
     // 4. Release locks in any order (usually reverse of acquisition)
-    pthread_rwlock_unlock(&acc_second->lock);
-    pthread_rwlock_unlock(&acc_first->lock);
-
+    pthread_rwlock_unlock(&bank.accounts[second].lock);
+    pthread_rwlock_unlock(&bank.accounts[first].lock);
     return success;
 }
