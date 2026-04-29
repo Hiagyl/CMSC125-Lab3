@@ -16,6 +16,18 @@ Bank bank;
 BufferPool pool;
 int tick_ms = 100; // Default
 
+void init_bank(Bank* b) {
+    b->num_accounts = MAX_ACCOUNTS;
+    pthread_mutex_init(&b->bank_lock, NULL);
+    
+    for (int i = 0; i < MAX_ACCOUNTS; i++) {
+        b->accounts[i].account_id = i;
+        b->accounts[i].balance_centavos = 0; // Default balance
+        // Initialize the lock for EVERY account, whether it's in the file or not
+        pthread_rwlock_init(&b->accounts[i].lock, NULL);
+    }
+}
+
 // Function to load initial account balances from accounts.txt
 void load_accounts(const char* filename) {
     FILE* fp = fopen(filename, "r");
@@ -68,7 +80,7 @@ int main(int argc, char* argv[]) {
     printf("=== Banking System Execution Log ===\n");
     
     // 1. Initialize Bank from accounts file
-    bank.num_accounts = MAX_ACCOUNTS;
+    init_bank(&bank);
     load_accounts(accounts_file);
     pthread_mutex_init(&bank.bank_lock, NULL);
 

@@ -17,12 +17,21 @@ const char* op_to_str(OpType type) {
     }
 }
 
+// helper to read the tick safely
+int get_current_tick() {
+    int val;
+    pthread_mutex_lock(&tick_lock);
+    val = global_tick;
+    pthread_mutex_unlock(&tick_lock);
+    return val;
+}
+
 void* execute_transaction(void* arg) {
     Transaction* tx = (Transaction*)arg;
 
     // 1. Wait until the simulation reaches the scheduled start time
     wait_until_tick(tx->start_tick);
-    tx->actual_start = global_tick;
+    tx->actual_start = get_current_tick();
     tx->status = TX_RUNNING;
 
     for (int i = 0; i < tx->num_ops; i++) {
@@ -50,7 +59,7 @@ void* execute_transaction(void* arg) {
                    tx->tx_id, op_to_str(op->type), op->account_id, op->amount_centavos/100, op->amount_centavos%100);
         }
 
-        int tick_before = global_tick;
+        int tick_before = get_current_tick();
 
         switch (op->type) {
             case OP_DEPOSIT:
@@ -90,7 +99,7 @@ void* execute_transaction(void* arg) {
             }
         }
         // Track how many ticks were spent waiting for locks
-        tx->wait_ticks += (global_tick - tick_before);
+        tx->wait_ticks += (get_current_tick() - tick_before);
 
         // Unload from Buffer
         if (op->type == OP_TRANSFER) {
