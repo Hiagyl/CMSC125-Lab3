@@ -1,0 +1,9 @@
+# Compiled Binaries
+bankdb
+tests/bankdb
+
+# Object Files
+src/*.o
+
+# OS generated files
+.DS_Store

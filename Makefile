@@ -5,13 +5,24 @@ CFLAGS = -Wall -Wextra -Iinclude -pthread -g
 SRC = src/main.c src/bank.c src/timer.c src/transaction.c src/buffer_pool.c \
       src/lock_mgr.c src/metrics.c src/utils.c
 OBJ = $(SRC:.c=.o)
-TARGET = tests/bankdb
+TARGET = bankdb
 
-# This is the important part:
+all: $(TARGET)
+
 $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ)
 
-# This tells make HOW to create a .o file from a .c file
+debug: CFLAGS += -fsanitize=thread
+debug: clean $(TARGET)
+
+test: $(TARGET)
+	@echo "Running Trace Tests..."
+	./$(TARGET) --accounts=tests/accounts.txt --trace=tests/trace_simple.txt
+	./$(TARGET) --accounts=tests/accounts.txt --trace=tests/trace_deadlock.txt
+	./$(TARGET) --accounts=tests/accounts.txt --trace=tests/trace_buffer.txt
+	./$(TARGET) --accounts=tests/accounts.txt --trace=tests/trace_stress.txt
+	./$(TARGET) --accounts=tests/accounts.txt --trace=tests/trace_concurrency.txt
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
