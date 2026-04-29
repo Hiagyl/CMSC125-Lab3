@@ -2,7 +2,10 @@
 #include "bank.h"
 #include "timer.h"
 #include "lock_mgr.h"
+#include "buffer_pool.h"
 #include <stdio.h>
+
+extern BufferPool pool;
 
 const char* op_to_str(OpType type) {
     switch(type) {
@@ -24,6 +27,19 @@ void* execute_transaction(void* arg) {
 
     for (int i = 0; i < tx->num_ops; i++) {
         Operation* op = &tx->ops[i];
+
+        // Load into Buffer
+        if (op->type == OP_TRANSFER) {
+            int first = (op->account_id < op->target_account) ? op->account_id : op->target_account;
+            int second = (op->account_id < op->target_account) ? op->target_account : op->account_id;
+            load_account(&pool, first);
+            load_account(&pool, second);
+        } else {
+            load_account(&pool, op->account_id);
+        }
+        
+        // force sleep to hold slots longer so we can see if T6 takes it after the first 5 threads
+        // usleep(50000);
 
         // Log Start
         if (op->type == OP_TRANSFER) {
@@ -48,6 +64,7 @@ void* execute_transaction(void* arg) {
                 } else {
                     printf("  T%d: WITHDRAW failed (Insufficient Funds)\n", tx->tx_id);
                     tx->status = TX_ABORTED;
+                    unload_account(&pool, op->account_id); // unload before exiting
                     return NULL;
                 }
                 break;
@@ -58,6 +75,9 @@ void* execute_transaction(void* arg) {
                     printf("  T%d completed: TRANSFER successful\n", tx->tx_id);
                 } else {
                     tx->status = TX_ABORTED;
+                    // unload both before exiting
+                    unload_account(&pool, op->account_id);
+                    unload_account(&pool, op->target_account);
                     return NULL;
                 }
                 break;
@@ -71,6 +91,14 @@ void* execute_transaction(void* arg) {
         }
         // Track how many ticks were spent waiting for locks
         tx->wait_ticks += (global_tick - tick_before);
+
+        // Unload from Buffer
+        if (op->type == OP_TRANSFER) {
+            unload_account(&pool, op->account_id);
+            unload_account(&pool, op->target_account);
+        } else {
+            unload_account(&pool, op->account_id);
+        }
     }
 
     tx->actual_end = global_tick;

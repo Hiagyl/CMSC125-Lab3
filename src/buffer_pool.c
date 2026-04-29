@@ -8,6 +8,12 @@ void init_buffer_pool(BufferPool* pool) {
     sem_init(&pool->empty_slots, 0, BUFFER_POOL_SIZE);
     sem_init(&pool->full_slots, 0, 0);
     pthread_mutex_init(&pool->pool_lock, NULL);
+
+    // intitialize in_use flags
+    for (int i = 0; i < BUFFER_POOL_SIZE; i++) {
+        pool->slots[i].in_use = false;
+        pool->slots[i].account_id = -1;
+    }
 }
 
 // Load account into buffer pool (producer)
@@ -20,7 +26,7 @@ void load_account(BufferPool* pool, int account_id) {
     for (int i = 0; i < BUFFER_POOL_SIZE; i++) {
         if (!pool->slots[i].in_use) {
             pool->slots[i].account_id = account_id;
-            pool->slots[i].data = &bank.accounts[account_id];
+            pool->slots[i].data = bank.accounts[account_id];
             pool->slots[i].in_use = true;
             break;
         }

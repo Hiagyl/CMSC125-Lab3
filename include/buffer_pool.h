@@ -8,7 +8,7 @@
 
 typedef struct {
     int account_id;
-    Account* data;
+    Account data;
     bool in_use;
 } BufferSlot;
 

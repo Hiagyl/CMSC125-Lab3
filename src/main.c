@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
 
     // 4. Execute
     for (int i = 0; i < num_tx; i++) {
-        load_account(&pool, workload[i].ops[0].account_id);
+        // load_account(&pool, workload[i].ops[0].account_id);
         pthread_create(&workload[i].thread, NULL, execute_transaction, &workload[i]);
     }
 
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
     int committed = 0;
     for (int i = 0; i < num_tx; i++) {
         pthread_join(workload[i].thread, NULL);
-        unload_account(&pool, workload[i].ops[0].account_id);
+        // unload_account(&pool, workload[i].ops[0].account_id);
         if (workload[i].status == TX_COMMITTED) committed++;
         // record result in metrics
         record_transaction_result(&workload[i]);
