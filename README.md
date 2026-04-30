@@ -40,6 +40,7 @@ make
 Run the executable with the required `--accounts` and `--trace` flags:
 ```bash
 ./bank_sim --accounts=accounts.txt --trace=trace.txt --tick-ms=100
+```
 
 **Arguments:**
 
