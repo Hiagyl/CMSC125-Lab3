@@ -20,8 +20,8 @@ test: $(TARGET)
 	./$(TARGET) --accounts=tests/accounts.txt --trace=tests/trace_simple.txt
 	./$(TARGET) --accounts=tests/accounts.txt --trace=tests/trace_deadlock.txt
 	./$(TARGET) --accounts=tests/accounts.txt --trace=tests/trace_buffer.txt
-	./$(TARGET) --accounts=tests/accounts.txt --trace=tests/trace_stress.txt
-	./$(TARGET) --accounts=tests/accounts.txt --trace=tests/trace_concurrency.txt
+	./$(TARGET) --accounts=tests/accounts.txt --trace=tests/trace_abort.txt
+	./$(TARGET) --accounts=tests/accounts.txt --trace=tests/trace_readers.txt
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
