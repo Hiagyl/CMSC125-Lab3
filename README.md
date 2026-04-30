@@ -5,8 +5,8 @@ A multi-threaded banking simulation demonstrating core Operating Systems concept
 ---
 
 ## 1. Group Members
-* **[First Member Name Placeholder]**
-* **[Second Member Name Placeholder]**
+* **Ticot, Joshua**
+* **Contreras, Emerson**
 
 ---
 
