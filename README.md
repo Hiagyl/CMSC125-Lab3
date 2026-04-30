@@ -34,7 +34,7 @@ To compile the system, run the following command in the project root:
 
 ```bash
 make
-
+```
 ## 3. Usage
 
 Run the executable with the required `--accounts` and `--trace` flags:
