@@ -7,13 +7,13 @@ This document outlines the architectural decisions and synchronization strategie
 ## 1. Deadlock Strategy Choice
 
 ### Strategy: Deadlock Prevention (Resource Hierarchy)
-I chose **Deadlock Prevention** using **Lock Ordering** (also known as Hierarchical Locking).
+We chose **Deadlock Prevention** using **Lock Ordering** (also known as Hierarchical Locking).
 
 ### Justification
 In a high-frequency banking simulation, the overhead of maintaining a "Wait-For-Graph" and running cycle-detection algorithms is computationally expensive. According to **Silberschatz et al. (2018)** in *Operating System Concepts*, prevention strategies are often preferred in systems where the cost of aborting and restarting transactions is high.
 
 ### Proof of Elimination (Breaking Coffman Conditions)
-By implementing lock ordering in `lock_mgr.c`, I have effectively eliminated the **Circular Wait** condition—one of the four necessary conditions for deadlock identified by **E.G. Coffman (1971)**.
+By implementing lock ordering in `lock_mgr.c`, we have effectively eliminated the **Circular Wait** condition—one of the four necessary conditions for deadlock identified by **E.G. Coffman (1971)**.
 
 * **The Implementation:** Every transaction involving multiple accounts (e.g., `TRANSFER`) acquires locks in a strict linear order based on the account's numeric ID.
 * **The Proof:** Let $L(n)$ be the lock for account $n$. By enforcing that $L(i)$ must be acquired before $L(j)$ if $i < j$, we establish a **partial ordering**. Since a cycle in a directed graph requires at least one edge $(v_j, v_i)$ where $j > i$, our ordering rule makes such an edge impossible.
