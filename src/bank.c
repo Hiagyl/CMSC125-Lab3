@@ -13,23 +13,32 @@ int get_balance(int account_id) {
 }
 
 void deposit(int account_id, int amount_centavos) {
-    Account* acc = &bank.accounts[account_id];
-    pthread_rwlock_wrlock(&acc->lock); // Exclusive write access
-    acc->balance_centavos += amount_centavos;
-    pthread_rwlock_unlock(&acc->lock);
+    // Update account balance
+    pthread_rwlock_wrlock(&bank.accounts[account_id].lock);
+    bank.accounts[account_id].balance_centavos += amount_centavos;
+    pthread_rwlock_unlock(&bank.accounts[account_id].lock);
+
+    // Track external inflow (Protected by bank_lock)
+    pthread_mutex_lock(&bank.bank_lock);
+    bank.total_deposited += amount_centavos;
+    pthread_mutex_unlock(&bank.bank_lock);
 }
 
 
 bool withdraw(int account_id, int amount_centavos) {
-    Account* acc = &bank.accounts[account_id];
-    pthread_rwlock_wrlock(&acc->lock);
-    
-    if (acc->balance_centavos < amount_centavos) {
-        pthread_rwlock_unlock(&acc->lock);
-        return false; // Transaction will need to abort
+    bool success = false;
+    pthread_rwlock_wrlock(&bank.accounts[account_id].lock);
+    if (bank.accounts[account_id].balance_centavos >= amount_centavos) {
+        bank.accounts[account_id].balance_centavos -= amount_centavos;
+        success = true;
     }
-    
-    acc->balance_centavos -= amount_centavos;
-    pthread_rwlock_unlock(&acc->lock);
-    return true;
+    pthread_rwlock_unlock(&bank.accounts[account_id].lock);
+
+    if (success) {
+        // Track external outflow
+        pthread_mutex_lock(&bank.bank_lock);
+        bank.total_withdrawn += amount_centavos;
+        pthread_mutex_unlock(&bank.bank_lock);
+    }
+    return success;
 }

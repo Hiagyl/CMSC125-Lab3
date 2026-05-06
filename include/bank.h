@@ -16,6 +16,11 @@ typedef struct {
     Account accounts[MAX_ACCOUNTS];
     int num_accounts;
     pthread_mutex_t bank_lock; // Protects bank-wide metadata
+
+    // Conservation Tracking
+    long long initial_sum;
+    long long total_deposited;
+    long long total_withdrawn;
 } Bank;
 
 int get_balance(int account_id);
