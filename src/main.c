@@ -51,6 +51,28 @@ void load_accounts(const char* filename) {
     fclose(fp);
 }
 
+void conservation_check() {
+    long long final_sum = 0;
+    for (int i = 0; i < MAX_ACCOUNTS; i++) {
+        final_sum += bank.accounts[i].balance_centavos;
+    }
+
+    long long expected_sum = bank.initial_sum + bank.total_deposited - bank.total_withdrawn;
+
+    printf("\n=== Conservation Check ===\n");
+    printf("Initial Total:   PHP %lld.%02lld\n", bank.initial_sum / 100, bank.initial_sum % 100);
+    printf("Total Deposited: PHP %lld.%02lld\n", bank.total_deposited / 100, bank.total_deposited % 100);
+    printf("Total Withdrawn: PHP %lld.%02lld\n", bank.total_withdrawn / 100, bank.total_withdrawn % 100);
+    printf("Expected Final:  PHP %lld.%02lld\n", expected_sum / 100, expected_sum % 100);
+    printf("Actual Final:    PHP %lld.%02lld\n", final_sum / 100, final_sum % 100);
+
+    if (final_sum == expected_sum) {
+        printf("Conservation Check: PASSED \n");
+    } else {
+        printf("Conservation Check: FAILED (Difference: %lld centavos)\n", final_sum - expected_sum);
+    }
+}
+
 int main(int argc, char* argv[]) {
     char *accounts_file = NULL;
     char *trace_file = NULL;
@@ -82,6 +104,11 @@ int main(int argc, char* argv[]) {
     // 1. Initialize Bank from accounts file
     init_bank(&bank);
     load_accounts(accounts_file);
+    // Conservation Check
+    bank.initial_sum = 0;
+    for (int i = 0; i < MAX_ACCOUNTS; i++) {
+        bank.initial_sum += bank.accounts[i].balance_centavos;
+    }
     pthread_mutex_init(&bank.bank_lock, NULL);
 
     // 2. Initialize Pool and Timer
@@ -116,6 +143,7 @@ int main(int argc, char* argv[]) {
     pthread_join(timer_tid, NULL);
     print_metrics_report();
 
+    conservation_check();
     printf("Total ticks: %d\n", global_tick);
     printf("ThreadSanitizer warnings: 0\n");
 
